@@ -9,15 +9,15 @@ def main():
     # Developer 1 details
     with col1:
         st.header('Developer 1')
-        st.image('pages/d1.jpg', width=200)
-        st.markdown('**Name:** John Doe')
+        st.image('pages/d1.png', width=200)
+        st.markdown('**Name:** VEMAKOTI KRISHNAMURTY')
         st.markdown('[GitHub](https://github.com/johndoe) | [LinkedIn](https://www.linkedin.com/in/johndoe/)')
 
     # Developer 2 details
     with col2:
         st.header('Developer 2')
-        st.image('pages/d2.jpg', width=200)
-        st.markdown('**Name:** Jane Smith')
+        st.image('pages/d2.png', width=200)
+        st.markdown('**Name:** VOONA DEVI CHARAN')
         st.markdown('[GitHub](https://github.com/janesmith) | [LinkedIn](https://www.linkedin.com/in/janesmith/)')
 
     # Guides
@@ -27,14 +27,14 @@ def main():
     # Guide 1
     with col3:
         st.header('Guide 1')
-        st.image('pages/g2.jpg', width=200)
-        st.markdown('**Name:** John Doe')
+        st.image('pages/g2.png', width=200)
+        st.markdown('**Name:** ')
         st.markdown('[GitHub](https://github.com/johndoe) | [LinkedIn](https://www.linkedin.com/in/johndoe/)')
 
     # Developer 2 details
     with col4:
         st.header('Guide 2')
-        st.image('pages/g1.jpg', width=200)
+        st.image('pages/g1.png', width=200)
         st.markdown('**Name:** Jane Smith')
         st.markdown('[GitHub](https://github.com/janesmith) | [LinkedIn](https://www.linkedin.com/in/janesmith/)')
 
