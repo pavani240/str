@@ -28,14 +28,14 @@ def main():
     with col3:
         st.header('Guide 1')
         st.image('pages/g2.png', width=200)
-        st.markdown('**Name:** ')
+        st.markdown('**Name:** Dr. K Eswarrao')
         st.markdown('[GitHub](https://github.com/johndoe) | [LinkedIn](https://www.linkedin.com/in/johndoe/)')
 
     # Developer 2 details
     with col4:
         st.header('Guide 2')
         st.image('pages/g1.png', width=200)
-        st.markdown('**Name:** Jane Smith')
+        st.markdown('**Name:** Sri B Ramesh')
         st.markdown('[GitHub](https://github.com/janesmith) | [LinkedIn](https://www.linkedin.com/in/janesmith/)')
 
 
