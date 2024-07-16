@@ -6,7 +6,7 @@ import importlib
 from WTF import l1, l2, l3, l4, l5, ll1, ll2, ll3, ll4, ll5, ll6, lll01, lll02, lll03, lll04, lll05, lll06, lll07, retrieve, facultyretrieve, notification, HODD, sent, r
 st.markdown("""
     <style>
-        .github-corner {
+        .st-emotion-cache-1wbqy5l e3g6aar2{
             display: none !important;
         }
     </style>
