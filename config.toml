@@ -1,2 +1,3 @@
 [server]
 showSource = false
+headless = true
