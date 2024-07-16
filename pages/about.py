@@ -1,0 +1,43 @@
+import streamlit as st
+
+def main():
+    st.title('Developer and Guide Showcase')
+
+    # Create columns for developers and guides
+    col1, col2 = st.columns(2)
+
+    # Developer 1 details
+    with col1:
+        st.header('Developer 1')
+        st.image('pages/gupta.jpg', width=200)
+        st.markdown('**Name:** John Doe')
+        st.markdown('[GitHub](https://github.com/johndoe) | [LinkedIn](https://www.linkedin.com/in/johndoe/)')
+
+    # Developer 2 details
+    with col2:
+        st.header('Developer 2')
+        st.image('pages/gupta.jpg', width=200)
+        st.markdown('**Name:** Jane Smith')
+        st.markdown('[GitHub](https://github.com/janesmith) | [LinkedIn](https://www.linkedin.com/in/janesmith/)')
+
+    # Guides
+    st.header('Guides')
+    col3, col4 = st.columns(2)
+
+    # Guide 1
+    with col3:
+        st.header('Developer 1')
+        st.image('pages/gupta.jpg', width=200)
+        st.markdown('**Name:** John Doe')
+        st.markdown('[GitHub](https://github.com/johndoe) | [LinkedIn](https://www.linkedin.com/in/johndoe/)')
+
+    # Developer 2 details
+    with col4:
+        st.header('Developer 2')
+        st.image('pages/gupta.jpg', width=200)
+        st.markdown('**Name:** Jane Smith')
+        st.markdown('[GitHub](https://github.com/janesmith) | [LinkedIn](https://www.linkedin.com/in/janesmith/)')
+
+
+if __name__ == "__main__":
+    main()
