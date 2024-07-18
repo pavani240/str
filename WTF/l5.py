@@ -15,10 +15,10 @@ def main(username):
         st.session_state.disabled = False
     
     # Display warning message for 20 seconds
-    warning_message = "Before submitting, please cross check all of your information is correct and no errors, changes cannot be recognized faster!! We appreciate your careful behavior in your self-appraisal."
-    with st.spinner("Read Warning Message...."):
-        st.warning(warning_message, icon="⚠️")
-        time.sleep(20)  # Wait for 20 seconds
+    # warning_message = "Before submitting, please cross check all of your information is correct and no errors, changes cannot be recognized faster!! We appreciate your careful behavior in your self-appraisal."
+    # with st.spinner("Read Warning Message...."):
+    #     st.warning(warning_message, icon="⚠️")
+    #     time.sleep(20)  # Wait for 20 seconds
     
     with st.form("l5"):   
         st.title("Certificate Courses Done")
