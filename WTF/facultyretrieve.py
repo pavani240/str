@@ -15,7 +15,7 @@ def fetch_all_data(username):
     Fetches data from all collections for the given username, excluding '_id' and 'username' columns.
     """
     data = {}
-    for i in range(1, 9):
+    for i in range(1, 19):
         collection_name = f"l{i}"
         collection = db[collection_name]
         result = list(collection.find({"username": username}))

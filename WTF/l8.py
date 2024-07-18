@@ -6,7 +6,7 @@ from pymongo import MongoClient
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
 collection = db['l8']  # Replace 'll3' with your actual collection name
-collection_users=['users']
+collection_users=db['users']
 def main(username):
     if "visibility" not in st.session_state:
         st.session_state.visibility = "visible"

@@ -24,7 +24,7 @@ def main(username):
         st.write("Have you delivered any guest or expert LECTURE?")
         Subject11 = st.text_input("Host institution details", value="", placeholder="Enter Host Institution Details")
         Subject13 = st.text_input("Who are the audience", value="", placeholder="Enter Audience Details")
-        Subject21 = st.text_input("Type of delivery", value="", placeholder="Enter Type of Delivery")
+        Subject21 = st.text_input("Type of guest or expert lecture deliveried", value="", placeholder="Enter Type of Delivery")
 
         if st.form_submit_button("Submit"):
             # Check for empty fields

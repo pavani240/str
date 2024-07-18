@@ -127,7 +127,7 @@ def faculty_home():
     elif nav == "l17":
         l17.main(st.session_state.username)
     elif nav == "l18":
-        l18.main()
+        l18.main(st.session_state.username)
     elif nav == "Retrieve":
         facultyretrieve.main(st.session_state.username)
     elif nav == "Notifications":
