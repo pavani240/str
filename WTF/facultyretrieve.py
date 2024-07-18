@@ -4,7 +4,10 @@ from pymongo import MongoClient, ReturnDocument
 from bson.objectid import ObjectId
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch  # Add this import
 
 # MongoDB connection details
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
@@ -46,49 +49,65 @@ def create_pdf(data, username):
     Generates a PDF file from the given data.
     """
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
 
-    pdf.setFont("Helvetica", 10)  # Set font and font size for header
-    pdf.drawString(30, height - 30, f"SAR DOCUMENT - {username}")  # Display username with title
-    pdf.line(30, height - 35, width - 30, height - 35)
-    y = height - 50
+    styles = getSampleStyleSheet()
+    title_style = styles["Heading1"]
+    title_style.alignment = 1  # Center align the title
+
+    header_style = ParagraphStyle(
+        name='HeaderStyle',
+        fontSize=8,
+        textColor=colors.white,
+        alignment=1,  # Center align the header text
+        backColor=colors.yellow
+    )
+
+    cell_style = ParagraphStyle(
+        name='CellStyle',
+        fontSize=6,
+        alignment=1  # Center align the cell text
+    )
+
+    elements.append(Paragraph(f"SAR DOCUMENT - {username}", title_style))
 
     for collection_name, df in data.items():
-        pdf.drawString(30, y, f"SAR DOCUMENT - {username} - {collection_name}")
-        y -= 15
+        elements.append(Spacer(1, 0.2 * inch))  # Add space between tables
+        elements.append(Paragraph(f"{collection_name}", title_style))
 
-        # Calculate column widths
-        column_width = (width - 60) / len(df.columns)
+        # Prepare table data with headers
+        table_data = [df.columns.tolist()] + df.values.tolist()
+        
+        # Wrapping the header text to avoid overlap
+        for i in range(len(table_data[0])):
+            table_data[0][i] = Paragraph(table_data[0][i], header_style)
+        
+        # Adjust column widths based on the content
+        col_widths = [max(len(str(cell)) for cell in col) * 0.1 * inch for col in zip(*table_data)]
+        col_widths = [min(width, 1.5 * inch) for width in col_widths]  # Limit maximum width for any column
 
-        # Draw table headers
-        for col_idx, column in enumerate(df.columns):
-            pdf.drawString(30 + col_idx * column_width, y, str(column))
-        y -= 15
-        pdf.line(30, y, width - 30, y)
-        y -= 15
+        table = Table(table_data, colWidths=col_widths)
 
-        # Draw table data
-        for _, row in df.iterrows():
-            for col_idx, (col_name, item) in enumerate(row.items()):
-                text = str(item)
-                while pdf.stringWidth(text) > (column_width - 10):
-                    text = text[:len(text) - 1]  # Trim text until it fits
-                pdf.drawString(30 + col_idx * column_width, y, text)
-            y -= 15
-            if y < 40:  # Create a new page if space runs out
-                pdf.showPage()
-                y = height - 30
-                pdf.setFont("Helvetica", 10)  # Reset font and font size for new page
-                pdf.drawString(30, y, f"SAR DOCUMENT - {username}")  # Redraw general header on new page
-                pdf.line(30, height - 35, width - 30, height - 35)
-                y -= 50  # Adjust y position for new page
-                pdf.drawString(30, y, f"SAR DOCUMENT - {username} - {collection_name}")  # Redraw specific header on new page
-                y -= 15
+        # Apply table styles
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.yellow),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('FONTSIZE', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ]))
 
-        y -= 20  # Space after each collection
+        elements.append(table)
 
-    pdf.save()
+    doc.build(elements)
     buffer.seek(0)
     return buffer
 
