@@ -4,10 +4,8 @@ from pymongo import MongoClient, ReturnDocument
 from bson.objectid import ObjectId
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.units import inch  # Add this import
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
 
 # MongoDB connection details
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
@@ -49,65 +47,63 @@ def create_pdf(data, username):
     Generates a PDF file from the given data.
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    elements = []
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
 
-    styles = getSampleStyleSheet()
-    title_style = styles["Heading1"]
-    title_style.alignment = 1  # Center align the title
+    margin = 0.5 * inch
+    usable_width = width - 2 * margin
+    usable_height = height - 2 * margin
+    pdf.translate(margin, margin)
+    pdf.setFont("Helvetica", 8)  # Set font and font size for content
 
-    header_style = ParagraphStyle(
-        name='HeaderStyle',
-        fontSize=8,
-        textColor=colors.white,
-        alignment=1,  # Center align the header text
-        backColor=colors.yellow
-    )
-
-    cell_style = ParagraphStyle(
-        name='CellStyle',
-        fontSize=6,
-        alignment=1  # Center align the cell text
-    )
-
-    elements.append(Paragraph(f"SAR DOCUMENT - {username}", title_style))
+    pdf.drawString(0, usable_height, f"SAR DOCUMENT - {username}")  # Display username with title
+    pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
+    y = usable_height - 30
 
     for collection_name, df in data.items():
-        elements.append(Spacer(1, 0.2 * inch))  # Add space between tables
-        elements.append(Paragraph(f"{collection_name}", title_style))
+        pdf.drawString(0, y, f"SAR DOCUMENT - {username} - {collection_name}")
+        y -= 15
 
-        # Prepare table data with headers
-        table_data = [df.columns.tolist()] + df.values.tolist()
-        
-        # Wrapping the header text to avoid overlap
-        for i in range(len(table_data[0])):
-            table_data[0][i] = Paragraph(table_data[0][i], header_style)
-        
-        # Adjust column widths based on the content
-        col_widths = [max(len(str(cell)) for cell in col) * 0.1 * inch for col in zip(*table_data)]
-        col_widths = [min(width, 1.5 * inch) for width in col_widths]  # Limit maximum width for any column
+        # Calculate column widths
+        column_widths = {col: max(pdf.stringWidth(col, "Helvetica", 8), 50) for col in df.columns}
+        for _, row in df.iterrows():
+            for col in df.columns:
+                column_widths[col] = max(column_widths[col], pdf.stringWidth(str(row[col]), "Helvetica", 8))
 
-        table = Table(table_data, colWidths=col_widths)
+        total_width = sum(column_widths.values())
+        scaling_factor = usable_width / total_width if total_width > usable_width else 1.0
+        column_widths = {col: width * scaling_factor for col, width in column_widths.items()}
 
-        # Apply table styles
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.yellow),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 8),
-            ('FONTSIZE', (0, 1), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ]))
+        # Draw table headers
+        for col_idx, (col, col_width) in enumerate(column_widths.items()):
+            pdf.drawString(sum(list(column_widths.values())[:col_idx]), y, str(col))
+        y -= 15
+        pdf.line(0, y, usable_width, y)
+        y -= 15
 
-        elements.append(table)
+        # Draw table data
+        for _, row in df.iterrows():
+            for col_idx, (col, col_width) in enumerate(column_widths.items()):
+                text = str(row[col])
+                wrapped_text = pdf.beginText(sum(list(column_widths.values())[:col_idx]), y)
+                wrapped_text.setFont("Helvetica", 8)
+                wrapped_text.setTextOrigin(sum(list(column_widths.values())[:col_idx]), y)
+                wrapped_text.textLines(text)
+                pdf.drawText(wrapped_text)
+            y -= 15
+            if y < 40:  # Create a new page if space runs out
+                pdf.showPage()
+                pdf.translate(margin, margin)
+                pdf.setFont("Helvetica", 8)  # Reset font and font size for new page
+                pdf.drawString(0, usable_height, f"SAR DOCUMENT - {username}")  # Redraw general header on new page
+                pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
+                y = usable_height - 30
+                pdf.drawString(0, y, f"SAR DOCUMENT - {username} - {collection_name}")  # Redraw specific header on new page
+                y -= 15
 
-    doc.build(elements)
+        y -= 20  # Space after each collection
+
+    pdf.save()
     buffer.seek(0)
     return buffer
 
