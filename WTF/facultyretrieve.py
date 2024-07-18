@@ -6,10 +6,12 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from datetime import datetime
 
 # MongoDB connection details
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']
+notifications_collection = db['notifications']  # Notifications collection
 
 def fetch_all_data(username):
     """
@@ -42,9 +44,17 @@ def update_data(collection_name, row_id, new_data):
         st.error(f"Error updating data: {e}")
         return False
 
-def create_pdf(data, username):
+def retrieve_notifications(username):
     """
-    Generates a PDF file from the given data.
+    Retrieves notifications for the given username.
+    """
+    query = {"username": username}
+    notifications = list(notifications_collection.find(query))
+    return notifications
+
+def create_pdf(data, notifications, username):
+    """
+    Generates a PDF file from the given data and notifications.
     """
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
@@ -103,6 +113,26 @@ def create_pdf(data, username):
 
         y -= 20  # Space after each collection
 
+    # Add notifications to the end of the PDF
+    pdf.showPage()  # Start a new page for notifications
+    pdf.translate(margin, margin)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(0, usable_height, f"Notifications for {username}")
+    pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
+    y = usable_height - 30
+
+    for notification in notifications:
+        pdf.drawString(0, y, f"Message: {notification['message']}")
+        y -= 15
+        pdf.drawString(0, y, f"Category: {notification['category']}")
+        y -= 15
+        pdf.drawString(0, y, f"Timestamp: {notification['timestamp']}")
+        y -= 30
+        if y < 40:  # Create a new page if space runs out
+            pdf.showPage()
+            pdf.translate(margin, margin)
+            y = usable_height - 30
+
     pdf.save()
     buffer.seek(0)
     return buffer
@@ -115,6 +145,8 @@ def main(username):
 
     # Fetch and display data
     data = fetch_all_data(username)
+    notifications = retrieve_notifications(username)
+    
     for collection_name, df in data.items():
         st.subheader(f"Collection: {collection_name}")
         if not df.empty:
@@ -147,7 +179,7 @@ def main(username):
 
     # Download PDF button
     if st.button("Download PDF"):
-        pdf_buffer = create_pdf(data, username)
+        pdf_buffer = create_pdf(data, notifications, username)
         st.download_button(
             label="Download PDF",
             data=pdf_buffer,
