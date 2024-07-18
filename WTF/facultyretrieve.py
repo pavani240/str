@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
+from pymongo import MongoClient, ReturnDocument
+from bson.objectid import ObjectId
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from pymongo import MongoClient
 
 # MongoDB connection details
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
@@ -11,7 +12,7 @@ db = client['Streamlit']
 
 def fetch_all_data(username):
     """
-    Fetches data from all collections for the given username, excluding '_id' column.
+    Fetches data from all collections for the given username, excluding '_id' and 'username' columns.
     """
     data = {}
     for i in range(1, 9):
@@ -20,12 +21,25 @@ def fetch_all_data(username):
         result = list(collection.find({"username": username}))
         if result:
             df = pd.DataFrame(result)
-            if '_id' in df.columns:
-                df.drop(columns=['_id'], inplace=True)
-            if 'username' in df.columns:
-                df.drop(columns=['username'], inplace=True)
+            df = df.drop(columns=['_id', 'username'])  # Drop unnecessary columns for display
             data[collection_name] = df
     return data
+
+def update_data(collection_name, row_id, new_data):
+    """
+    Updates data in MongoDB collection.
+    """
+    try:
+        collection = db[collection_name]
+        update_result = collection.find_one_and_update(
+            {"_id": ObjectId(row_id)},
+            {"$set": new_data},
+            return_document=ReturnDocument.AFTER
+        )
+        return update_result is not None
+    except Exception as e:
+        st.error(f"Error updating data: {e}")
+        return False
 
 def create_pdf(data, username):
     """
@@ -80,58 +94,53 @@ def create_pdf(data, username):
 
 def main(username):
     """
-    Displays table selection and handles data retrieval and PDF download flow.
+    Main Streamlit application function.
     """
-    st.title("Retrieval Page")
+    st.title("Modify Data")
 
-    # Display collection selection
-    table = st.selectbox("Select collection/page", [f"l{i}" for i in range(1, 9)])
+    # Fetch and display data
+    data = fetch_all_data(username)
+    for collection_name, df in data.items():
+        st.subheader(f"Collection: {collection_name}")
+        if not df.empty:
+            for index, row in df.iterrows():
+                st.write(f"Row {index + 1}")
 
-    # Submit button
-    if st.button("Submit"):
-        if table:
-            # Validate collection name against allowed values
-            allowed_collections = [f"l{i}" for i in range(1, 9)]
-            if table in allowed_collections:
-                collection = db[table]
-                result = list(collection.find({"username": username}))
-                if result:
-                    df = pd.DataFrame(result)
-                    if '_id' in df.columns:
-                        df.drop(columns=['_id'], inplace=True)
-                    if 'username' in df.columns:
-                        df.drop(columns=['username'], inplace=True)
-                    st.write(df)  # Display data in a tabular format in Streamlit
+                # Generate a unique key for the modify button to avoid conflicts
+                modify_key = f"modify_{collection_name}_{index}"
+                if st.button(f"Modify row {index + 1}", key=modify_key):
+                    new_data = {}
+                    for column in df.columns:
+                        new_value = st.text_input(f"Enter new value for {column}", row[column], key=f"{collection_name}_{column}_{index}")
+                        new_data[column] = new_value
 
-                    # Add modify button for each row if needed
-                    # for i, row in df.iterrows():
-                    #     if st.button(f"Modify row {i+1}", key=f"modify_{i}"):
-                    #         st.session_state.modify_row = row.to_dict()
-                    #         st.session_state.modify_collection = table
-                    #         st.experimental_rerun()  # Trigger a rerun
+                    # Generate a unique key for the update button to avoid conflicts
+                    update_key = f"update_{collection_name}_{index}"
+                    if st.button("Update", key=update_key):
+                        if update_data(collection_name, str(row['_id']), new_data):
+                            st.success("Data updated successfully.")
+                            # Refresh data after update
+                            data = fetch_all_data(username)
+                        else:
+                            st.error("Failed to update data.")
+
                 else:
-                    st.write("No data found for the given username.")
-            else:
-                st.write("Invalid collection selected.")
+                    st.write(row)
+
         else:
-            st.write("Please select a collection.")
+            st.write(f"No data found in collection: {collection_name}")
 
     # Download PDF button
     if st.button("Download PDF"):
-        data = fetch_all_data(username)
-        if data:
-            pdf_buffer = create_pdf(data, username)
-            st.download_button(
-                label="Download PDF",
-                data=pdf_buffer,
-                file_name=f"SAR_DOCUMENT_{username}.pdf",
-                mime="application/pdf"
-            )
-        else:
-            st.write("No data available to download.")
+        pdf_buffer = create_pdf(data, username)
+        st.download_button(
+            label="Download PDF",
+            data=pdf_buffer,
+            file_name=f"SAR_DOCUMENT_{username}.pdf",
+            mime="application/pdf"
+        )
 
 if __name__ == "__main__":
-    st.title("Retrieval Page")
     if "username" not in st.session_state:
         st.session_state.username = "default_username"  # Set a default username or use a login method to get the actual username
     main(st.session_state.username)

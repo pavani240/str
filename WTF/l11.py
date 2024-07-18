@@ -4,10 +4,10 @@ import datetime
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
-collection = db['ll6']  # Replace 'll6' with your actual collection name
-
-def main():
-    with st.form("ll6"):
+collection = db['l11']  # Replace 'll6' with your actual collection name
+collection_users=db['users']
+def main(username):
+    with st.form("l11"):
         st.title("Number Of Chairing Sessions & Delivering talks and lectures")
 
         st.write("No. Of Chairing sessions and delivering talks & lectures up to previous assessment year:")
@@ -33,7 +33,17 @@ def main():
                 return
             
             try:
+                username = st.session_state.username  # Replace with your actual way of getting username
+                
+                # Query users collection to get department for the specified username
+                user_data = collection_users.find_one({"username": username})
+                if user_data:
+                    department = user_data.get("department", "")
+                else:
+                    st.error("Username not found in users collection.")
+                    return
                 data = {
+                    "username": username,
                     "lectures": lec,
                     "delivering_talks": dtalk,
                     "chairing_talks": ctalks,
@@ -44,6 +54,7 @@ def main():
                     "host_institution_details": Subject11,
                     "audience_details": Subject13,
                     "guest_lecture_delivery_type": Subject21,
+                    "department":department,
                     "date":datetime.datetime.now()
                 }
                 collection.insert_one(data)

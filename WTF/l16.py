@@ -5,10 +5,10 @@ import datetime
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
-collection = db['lll05']  # Replace 'lll05' with your actual collection name
-
-def main():
-    with st.form("lll5"):
+collection = db['l16']  # Replace 'lll05' with your actual collection name
+collection_users=db['users']
+def main(username):
+    with st.form("l16"):
         st.title("PATENTS")
 
         n1 = st.text_input("No. Of PATENTS Filed upto previous assessment year:")
@@ -27,13 +27,23 @@ def main():
             try:
                 # Convert date to datetime.datetime
                 dof = datetime.datetime.combine(dof, datetime.datetime.min.time())
-
+                username = st.session_state.username  # Replace with your actual way of getting username
+                
+                # Query users collection to get department for the specified username
+                user_data = collection_users.find_one({"username": username})
+                if user_data:
+                    department = user_data.get("department", "")
+                else:
+                    st.error("Username not found in users collection.")
+                    return
                 data = {
+                    "username": username,
                     "patents_filed_previous": n1,
                     "patents_obtained_previous": n2,
                     "status_of_patent": sop,
                     "date_of_registration": dof,
                     "description_of_patent": iss,
+                    "department":department,
                     "date":datetime.datetime.now()
                 }
                 collection.insert_one(data)

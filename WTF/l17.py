@@ -4,10 +4,10 @@ import datetime
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
-collection = db['lll06']  # Replace 'lll06' with your actual collection name
-
-def main():
-    with st.form("lll6"):
+collection = db['l17']  # Replace 'lll06' with your actual collection name
+collection_users=db['users']
+def main(username):
+    with st.form("l17"):
         st.title("PRODUCT DESIGN / SOFTWARE DEVELOPMENT")
 
         n1 = st.text_input("No. Of Products designed/developed upto previous assessment year:")
@@ -24,12 +24,23 @@ def main():
                 return
             
             try:
+                username = st.session_state.username  # Replace with your actual way of getting username
+                
+                # Query users collection to get department for the specified username
+                user_data = collection_users.find_one({"username": username})
+                if user_data:
+                    department = user_data.get("department", "")
+                else:
+                    st.error("Username not found in users collection.")
+                    return
                 data = {
+                    "username": username,
                     "products_previous": n1,
                     "product_name": nop,
                     "faculty_count": nof,
                     "position_in_team": pos,
                     "product_description": dop,
+                    "department":department,
                     "date":datetime.datetime.now()
                 }
                 collection.insert_one(data)

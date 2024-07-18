@@ -5,16 +5,16 @@ from pymongo import MongoClient
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
-collection = db['ll3']  # Replace 'll3' with your actual collection name
-
-def main():
+collection = db['l8']  # Replace 'll3' with your actual collection name
+collection_users=['users']
+def main(username):
     if "visibility" not in st.session_state:
         st.session_state.visibility = "visible"
         st.session_state.disabled = False
 
     today = datetime.datetime.now()
 
-    with st.form("ll3"):   
+    with st.form("l8"):   
         st.title("PROFESSIONAL ROLES")
         
         Subject = st.text_input("Nature of work", value="", placeholder="Enter the Nature of Work")
@@ -42,7 +42,17 @@ def main():
                 return
 
             try:
+                username = st.session_state.username  # Replace with your actual way of getting username
+                
+                # Query users collection to get department for the specified username
+                user_data = collection_users.find_one({"username": username})
+                if user_data:
+                    department = user_data.get("department", "")
+                else:
+                    st.error("Username not found in users collection.")
+                    return
                 data = {
+                    "username": username,
                     "nature_of_work": Subject,
                     "type_of_funding": Subject3,
                     "since_date_1": frod.strftime("%Y-%m-%d"),
@@ -53,6 +63,7 @@ def main():
                     "incharge_since_date": frod3.strftime("%Y-%m-%d"),
                     "membership_department": Suhod11,
                     "membership_since_date": frodt.strftime("%Y-%m-%d"),
+                    "department":department,
                     "date":datetime.datetime.now()
                 }
                 collection.insert_one(data)

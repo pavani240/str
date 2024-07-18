@@ -5,10 +5,10 @@ import datetime
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
-collection = db['lll03']  # Replace 'lll03' with your actual collection name
-
-def main():
-    with st.form("lll3"):
+collection = db['l14']  # Replace 'lll03' with your actual collection name
+collection_users=db['users']
+def main(username):
+    with st.form("l14"):
         st.title("RESEARCH GUIDANCE (Ph.D/M.Phil)")
 
         n1 = st.text_input("No. Of STUDENTS Completed Ph.D/M.Phil:")
@@ -32,14 +32,24 @@ def main():
             try:
                 # Convert date to datetime.datetime
                 frod3 = datetime.datetime.combine(frod3, datetime.datetime.min.time())
-
+                username = st.session_state.username  # Replace with your actual way of getting username
+                
+                # Query users collection to get department for the specified username
+                user_data = collection_users.find_one({"username": username})
+                if user_data:
+                    department = user_data.get("department", "")
+                else:
+                    st.error("Username not found in users collection.")
+                    return
                 data = {
+                    "username": username,
                     "students_completed": n1,
                     "degree": deg,
                     "university": uni,
                     "guide": gui,
                     "date_of_registration": frod3,
                     "student_particulars": stype,
+                    "department": department,
                     "date":datetime.datetime.now()
                 }
                 collection.insert_one(data)

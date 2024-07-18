@@ -3,7 +3,7 @@ import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import importlib
-from WTF import l1, l2, l3, l4, l5, ll1, ll2, ll3, ll4, ll5, ll6, lll01, lll02, lll03, lll04, lll05, lll06, lll07, retrieve, facultyretrieve, notification, HODD, sent, r
+from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12,l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r
 st.markdown("""
     <style>
         .st-emotion-cache-1wbqy5l e3g6aar2{
@@ -89,7 +89,7 @@ def faculty_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    available_pages = ["l1", "l2", "l3", "l4", "l5", "ll1", "ll2", "ll3", "ll4", "ll5", "ll6", "lll1", "lll2", "lll3", "lll4", "lll5", "lll6", "lll7", "Retrieve", "Notifications"]
+    available_pages = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12", "l13", "l14", "l15", "l16", "l17", "l18", "Retrieve", "Notifications"]
     nav = st.sidebar.radio("Navigation", available_pages)
 
     if nav == "l1":
@@ -101,33 +101,33 @@ def faculty_home():
     elif nav == "l4":
         l4.main(st.session_state.username)
     elif nav == "l5":
-        l5.main()
-    elif nav == "ll1":
-        ll1.main()
-    elif nav == "ll2":
-        ll2.main()
-    elif nav == "ll3":
-        ll3.main()
-    elif nav == "ll4":
-        ll4.main()
-    elif nav == "ll5":
-        ll5.main()
-    elif nav == "ll6":
-        ll6.main()
-    elif nav == "lll1":
-        lll01.main()
-    elif nav == "lll2":
-        lll02.main()
-    elif nav == "lll3":
-        lll03.main()
-    elif nav == "lll4":
-        lll04.main()
-    elif nav == "lll5":
-        lll05.main()
-    elif nav == "lll6":
-        lll06.main()
-    elif nav == "lll7":
-        lll07.main()
+        l5.main(st.session_state.username)
+    elif nav == "l6":
+        l6.main(st.session_state.username)
+    elif nav == "l7":
+        l7.main(st.session_state.username)
+    elif nav == "l8":
+        l8.main(st.session_state.username)
+    elif nav == "l9":
+        l9.main(st.session_state.username)
+    elif nav == "l10":
+        l10.main(st.session_state.username)
+    elif nav == "l11":
+        l11.main(st.session_state.username)
+    elif nav == "l12":
+        l12.main(st.session_state.username)
+    elif nav == "l13":
+        l13.main(st.session_state.username)
+    elif nav == "l14":
+        l14.main(st.session_state.username)
+    elif nav == "l15":
+        l15.main(st.session_state.username)
+    elif nav == "l16":
+        l16.main(st.session_state.username)
+    elif nav == "l17":
+        l17.main(st.session_state.username)
+    elif nav == "l18":
+        l18.main()
     elif nav == "Retrieve":
         facultyretrieve.main(st.session_state.username)
     elif nav == "Notifications":
