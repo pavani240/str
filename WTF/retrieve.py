@@ -35,7 +35,7 @@ def insert_notification(username, comment):
     notification = {
         "username": username,
         "message": comment,
-        "category": "faculty",
+        "category": st.session_state.role,
         "timestamp": datetime.now()
     }
     try:

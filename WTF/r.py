@@ -7,7 +7,7 @@ client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster
 db = client['Streamlit']
 
 def main():
-    st.title("Retrieve Forwarded Data")
+    st.title("Forwarded Data from HOD")
 
     # Retrieve data from the 'forwarded' collection and sort by timestamp descending
     forwarded_data = list(db['forwarded'].find({}, {'_id': 0}).sort("timestamp", -1))
@@ -24,7 +24,7 @@ def main():
             
             # Buttons for approve and write review
             if st.button(f"Approve_{index}"):
-                update_status(row['username'], "approved")
+                update_status(row['username'], "Approved")
                 st.success(f"Status updated to 'approved' for {row['username']}.")
 
             if st.button(f"Write Review_{index}"):
@@ -37,7 +37,7 @@ def main():
                     submit = st.form_submit_button("Submit Review")
 
                     if submit:
-                        update_status(row['username'], "reviewed", review)
+                        update_status(row['username'], "Reviewed", review)
                         st.success(f"Review submitted for {row['username']}.")
                         st.session_state[f"show_review_form_{index}"] = False
 

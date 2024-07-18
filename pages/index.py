@@ -3,7 +3,7 @@ import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import importlib
-from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12,l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r
+from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12,l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r,pdf
 st.markdown("""
     <style>
         .st-emotion-cache-1wbqy5l e3g6aar2{
@@ -51,7 +51,7 @@ def hod_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Sent", "Retrieved Data", "Retrieve All Data","Departmental Retrieve"])
+    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Sent", "Retrieved Data","Pdf View", "Departmental Retrieve"])
 
     if nav == "Faculty Details":
         show_faculty_details()
@@ -59,6 +59,8 @@ def hod_home():
         st.write("Received Page")
     elif nav == "Sent":
         sent.main()
+    elif nav == "Pdf View":
+        pdf.main()
     # elif nav == "Pending":
     #     st.write("Pending Page")
     elif nav == "Retrieved Data":
@@ -72,12 +74,14 @@ def principal_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Sent"])
+    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Pdf View","Sent"])
 
     if nav == "Faculty Details":
         show_faculty_details()
     elif nav == "Received":
         r.main()
+    elif nav == "Pdf View":
+        pdf.main()
     elif nav == "Sent":
         st.write("No sent page")
     # elif nav == "Pending":
