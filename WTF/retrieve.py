@@ -9,8 +9,8 @@ db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
 
 # List of collections
 collections = [
-    'l1', 'l2', 'l3', 'l4', 'l5', 'll1', 'll2', 'll3', 'll4', 
-    'll5', 'll6', 'lll01', 'lll02', 'lll03', 'lll04', 'lll05', 'lll06', 'lll07'
+    'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 
+    'l10', 'l11', 'l12', 'l13', 'l14', 'l15', 'l16', 'l17', 'l18'
 ]
 
 def date_to_datetime(date):
