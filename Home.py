@@ -57,6 +57,6 @@ st.markdown("""
         }
     </style>
     <div class="footer">
-        © 2024 Aditya Institute of Technology & Management.All rights reserved.
+        © 2024 Aditya Institute of Technology & Management. All rights reserved.
     </div>
 """, unsafe_allow_html=True)
