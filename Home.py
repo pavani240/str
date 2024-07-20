@@ -48,7 +48,7 @@ st.markdown("""
     <style>
         .footer {
             margin: 20px;
-            margin-left: 10px;
+            margin-left: 3px;
             position: relative;
             bottom: 0;
             width: 100%;    
