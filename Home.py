@@ -47,8 +47,7 @@ st.markdown("""
 st.markdown("""
     <style>
         .footer {
-            # margin-top: 20px;
-            margin-left: 3px;
+            
             position: relative;
             bottom: 0;
             width: 100%;    
@@ -58,7 +57,6 @@ st.markdown("""
         }
     </style>
     <div class="footer">
-        © 2024 Aditya Institute of Technology & Management. <br>
-        All rights reserved.
+        © 2024 Aditya Institute of Technology & Management.All rights reserved.
     </div>
 """, unsafe_allow_html=True)
