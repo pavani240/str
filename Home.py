@@ -24,7 +24,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 st.subheader("Welcome to EvalMaster - Employee Appraisal Systems")
-st.image('logo2.png',width=600)
+st.image('logo2.png')
 st.markdown("""
         <div class="justified-text">
             To streamline and modernize the faculty appraisal process, our college has developed an
