@@ -1,9 +1,9 @@
-# Initialize session state variables
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import importlib
-from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12,l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r,pdf
+from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r, pdf
+
 st.markdown("""
     <style>
         .st-emotion-cache-1wbqy5l e3g6aar2{
@@ -51,7 +51,7 @@ def hod_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Sent", "Retrieved Data","Pdf View", "Departmental Retrieve"])
+    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Sent", "Retrieved Data", "Pdf View", "Departmental Retrieve"])
 
     if nav == "Faculty Details":
         show_faculty_details()
@@ -61,8 +61,6 @@ def hod_home():
         sent.main()
     elif nav == "Pdf View":
         pdf.main()
-    # elif nav == "Pending":
-    #     st.write("Pending Page")
     elif nav == "Retrieved Data":
         retrieve.main()
     elif nav == "Departmental Retrieve":
@@ -74,7 +72,7 @@ def principal_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Pdf View","Sent"])
+    nav = st.sidebar.radio("Navigation", ["Faculty Details", "Received", "Pdf View", "Sent"])
 
     if nav == "Faculty Details":
         show_faculty_details()
@@ -84,8 +82,6 @@ def principal_home():
         pdf.main()
     elif nav == "Sent":
         st.write("No sent page")
-    # elif nav == "Pending":
-    #     st.write("Pending Page")
 
 def faculty_home():
     st.title(f"Welcome Faculty: {st.session_state.username}")
@@ -137,6 +133,67 @@ def faculty_home():
     elif nav == "Notifications":
         notification.main(st.session_state.username)
 
+def admin_home():
+    st.title(f"Welcome Admin: {st.session_state.username}")
+
+    if st.sidebar.button("Logout"):
+        logout()
+
+    nav = st.sidebar.radio("Navigation", ["Add User", "Delete User"])
+
+    if nav == "Add User":
+        add_user_form()
+    elif nav == "Delete User":
+        delete_user_form()
+
+def add_user_form():
+    st.header("Add New User")
+
+    with st.form("add_user_form"):
+        new_username = st.text_input("Username")
+        new_password = st.text_input("Password", type="password")
+        new_role = st.selectbox("Role", ["Faculty", "HOD", "Principal"])
+        new_department = st.text_input("Department")
+
+        submit_button = st.form_submit_button("Add User")
+
+        if submit_button:
+            if new_username and new_password and new_role and new_department:
+                new_user = {
+                    "username": new_username,
+                    "password": new_password,
+                    "role": new_role,
+                    "department": new_department
+                }
+                try:
+                    db['users'].insert_one(new_user)
+                    st.success("User added successfully!")
+                except Exception as e:
+                    st.error(f"Error adding user: {e}")
+            else:
+                st.warning("Please fill in all fields.")
+
+def delete_user_form():
+    st.header("Delete User")
+
+    with st.form("delete_user_form"):
+        del_username = st.text_input("Username to delete")
+
+        submit_button = st.form_submit_button("Delete User")
+
+        if submit_button:
+            if del_username:
+                try:
+                    result = db['users'].delete_one({"username": del_username})
+                    if result.deleted_count > 0:
+                        st.success(f"User '{del_username}' deleted successfully!")
+                    else:
+                        st.warning(f"User '{del_username}' not found.")
+                except Exception as e:
+                    st.error(f"Error deleting user: {e}")
+            else:
+                st.warning("Please enter a username.")
+
 def show_faculty_details():
     result = list(db['faculty'].find())
     df = pd.DataFrame(result, columns=["id", "name", "department", "email"])  # Adjust column names based on your collection
@@ -163,3 +220,5 @@ else:
         principal_home()
     elif st.session_state.role == "Faculty":
         faculty_home()
+    elif st.session_state.role == "Admin":
+        admin_home()
