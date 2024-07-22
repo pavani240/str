@@ -195,9 +195,26 @@ def delete_user_form():
                 st.warning("Please enter a username.")
 
 def show_faculty_details():
-    result = list(db['faculty'].find())
-    df = pd.DataFrame(result, columns=["id", "name", "department", "email"])  # Adjust column names based on your collection
-    st.write(df)
+    # Retrieve the department of the logged-in HOD
+    if st.session_state.role == "HOD":
+        hod_department = db['users'].find_one({"username": st.session_state.username})['department']
+        # Filter users based on the HOD's department
+        users = db['users'].find({"department": hod_department})
+        
+        # Define the columns to display
+        columns_to_display = ["username", "role", "department"]
+    else:
+        # For other roles, display all users
+        users = db['users'].find()
+        columns_to_display = ["username", "password", "role", "department"]
+    
+    # Convert the result to a DataFrame
+    df = pd.DataFrame(list(users), columns=["username", "password", "role", "department"])
+    
+    # Display the DataFrame with selected columns
+    st.write(df[columns_to_display])
+
+    # Check the role of the logged-in user
 
 def show_page(page_name):
     try:

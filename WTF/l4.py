@@ -2,23 +2,39 @@ import streamlit as st
 import time
 from pymongo import MongoClient
 import datetime
+
 # MongoDB connection
 client = MongoClient("mongodb+srv://devicharanvoona1831:HSABL0BOyFNKdYxt@cluster0.fq89uja.mongodb.net/")
 db = client['Streamlit']  # Replace 'Streamlit' with your actual database name
 collection = db['l4']  # Replace 'l4' with your actual collection name
+
+def get_points(material_type, involvement_type):
+    """
+    Function to get the points based on the type of material and type of involvement.
+    """
+    if material_type == "ICT Based teaching Material":
+        if involvement_type == "Single":
+            return 100
+        elif involvement_type == "More than one":
+            return 50
+    elif material_type == "Interactive Courses/Online Courses":
+        if involvement_type == "Single":
+            return 75
+        elif involvement_type == "More than one":
+            return 35
+    elif material_type == "Participatory Learning Modules/Teaching Notes":
+        if involvement_type == "Single":
+            return 50
+        elif involvement_type == "More than one":
+            return 25
+    return 0
 
 def main(username):
     if "visibility" not in st.session_state:
         st.session_state.visibility = "visible"
         st.session_state.disabled = False
 
-    # Display warning message for 20 seconds
-    # warning_message = "Before submitting, please cross check all of your information is correct and no errors, changes cannot be recognized faster!! We appreciate your careful behavior in your self-appraisal."
-    # with st.spinner("Read Warning Message...."):
-    #     st.warning(warning_message, icon="⚠️")
-    #     time.sleep(20)  # Wait for 20 seconds
-
-    # Reset session state after 20 seconds
+    # Reset session state
     st.session_state.visibility = "visible"
     st.session_state.disabled = False
 
@@ -42,18 +58,31 @@ def main(username):
         placeholder="Department Name"
     )
 
-    option1 = st.selectbox(
-        "Type of Involvement",
-        ("Single", "More than one"),
+    material_options = [
+        "ICT Based teaching Material",
+        "Interactive Courses/Online Courses",
+        "Participatory Learning Modules/Teaching Notes"
+    ]
+
+    typem = st.selectbox(
+        "Type of Material Developed",
+        options=material_options,
         label_visibility=st.session_state.visibility,
         disabled=st.session_state.disabled,
     )
 
-    typem = st.text_input(
-        "Type of Material Developed",
-        value="",
-        placeholder="Enter the Material Name"
+    involvement_options = ["Single", "More than one"]
+
+    option1 = st.selectbox(
+        "Type of Involvement",
+        options=involvement_options,
+        label_visibility=st.session_state.visibility,
+        disabled=st.session_state.disabled,
     )
+
+    points = get_points(typem, option1)
+
+ 
 
     if st.button("Submit"):
         # Check for empty fields
@@ -69,7 +98,8 @@ def main(username):
                 "department": dep,
                 "type_of_involvement": option1,
                 "type_of_material": typem,
-                "date":datetime.datetime.now()
+                "points": points,  # Add points to the data
+                "date": datetime.datetime.now()
             }
             collection.insert_one(data)
             st.success("Data inserted successfully!")
