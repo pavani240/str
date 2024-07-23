@@ -108,5 +108,5 @@ def main(username):
 
 if __name__ == "__main__":
     # You need to set the username in session state before running the main function
-    st.session_state.username = "your_username"  # Replace 'your_username' with the actual username
+  # Replace 'your_username' with the actual username
     main(st.session_state.username)

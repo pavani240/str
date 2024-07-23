@@ -1,13 +1,14 @@
-# hod_page.py
-
 import streamlit as st
 import pandas as pd
 from pymongo import MongoClient, ReturnDocument
 from bson.objectid import ObjectId
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
+from reportlab.lib import colors
+from PyPDF2 import PdfReader, PdfWriter
+import base64
 from datetime import datetime
 
 # MongoDB connection details
@@ -27,6 +28,7 @@ def fetch_all_data(username):
         if result:
             df = pd.DataFrame(result)
             df = df.drop(columns=['_id', 'username'])  # Drop unnecessary columns for display
+            df = df.fillna('')  # Replace NaN values with empty strings
             data[collection_name] = df
     return data
 
@@ -54,119 +56,202 @@ def retrieve_notifications(username):
     notifications = list(notifications_collection.find(query))
     return notifications
 
+def calculate_row_height(text, col_width):
+    """
+    Calculate row height based on the length of the text.
+    """
+    lines = text.split('\n')
+    max_lines = max(len(line) for line in lines)
+    return max(0.2 * inch, max_lines * 0.2 * inch)  # Adjust multiplier as needed
+
+def create_table_chunk(data_chunk, column_width):
+    row_heights = []
+    for row in data_chunk:
+        max_cell_height = 0
+        for cell in row:
+            if isinstance(cell, str):  # Check if cell is a string
+                lines = cell.split('\n')
+                max_cell_height = max(max_cell_height, len(lines) * 0.2 * inch)
+            else:
+                max_cell_height = max(max_cell_height, 0.2 * inch)  # Default height for non-string cells
+        row_heights.append(max(0.2 * inch, max_cell_height))  
+    table = Table(data_chunk, colWidths=[column_width] * len(data_chunk[0]), rowHeights=row_heights)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.black),
+        ('PADDING', (0, 0), (-1, -1), (0.1 * inch, 0.1 * inch, 0.1 * inch, 0.1 * inch)),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Reduced font size
+        ('WRAPON', (0, 0), (-1, -1))  # Enable text wrapping
+    ]))
+    return table, sum(row_heights)
+
+def add_table_pages(df, title, pdf_writer):
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=(11 * inch, 17 * inch),  # Increased page size
+                            rightMargin=0.5 * inch, leftMargin=0.5 * inch, 
+                            topMargin=0.5 * inch, bottomMargin=0.5 * inch, 
+                            landscape=True)
+    elements = []
+
+    # Add title
+    title_style = TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),  # Reduced font size
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER')
+    ])
+    title_table = Table([[title]], colWidths=[10 * inch])  # Adjust column width for landscape
+    title_table.setStyle(title_style)
+    elements.append(title_table)
+    elements.append(Spacer(1, 6))  # Reduced space after title
+
+    # Calculate available space on the page
+    available_space = 17 * inch - 1 * inch  # Adjust max height for landscape
+
+    # Add tables with pagination
+    num_columns = len(df.columns)
+    column_width = (10 * inch) / num_columns  # Adjust column width for landscape
+
+    # Prepare table data
+    table_data = [df.columns.tolist()] + df.values.tolist()
+
+    table_index = 0
+    while table_index < len(table_data):
+        chunk = table_data[table_index:table_index + 20]
+        table, table_height = create_table_chunk(chunk, column_width)
+
+        # Check if the table fits on the current page
+        if table_height > available_space:
+            # Start a new page
+            doc.build(elements)
+            pdf_buffer.seek(0)
+            pdf_reader = PdfReader(pdf_buffer)
+            for page in pdf_reader.pages:
+                pdf_writer.add_page(page)
+
+            # Reset available space and elements
+            available_space = 17 * inch - 1 * inch  # Reset space for new page
+            elements = [title_table, Spacer(1, 6)]  # Re-add title for new page
+
+        elements.append(table)
+        elements.append(Spacer(1, 6))  # Reduced space after table chunk
+        available_space -= table_height
+        table_index += 20  # Move to the next chunk of rows
+
+        # Check if there's enough space left on the current page
+        if available_space < 0.2 * inch:  # Leave some space for the next table
+            # Start a new page
+            doc.build(elements)
+            pdf_buffer.seek(0)
+            pdf_reader = PdfReader(pdf_buffer)
+            for page in pdf_reader.pages:
+                pdf_writer.add_page(page)
+
+            # Reset available space and elements
+            available_space = 17 * inch - 1 * inch  # Reset space for new page
+            elements = [title_table, Spacer(1, 6)]  # Re-add title for new page
+
+    # Build the final page
+    if elements:
+        doc.build(elements)
+        pdf_buffer.seek(0)
+        pdf_reader = PdfReader(pdf_buffer)
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+
+
 def create_pdf(data, notifications, username):
     """
-    Generates a PDF file from the given data and notifications.
+    Generates a PDF file from the given data and notifications, and appends proofs of work.
     """
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    pdf_writer = PdfWriter()
 
-    margin = 0.5 * inch
-    usable_width = width - 2 * margin
-    usable_height = height - 2 * margin
-    pdf.translate(margin, margin)
-    pdf.setFont("Helvetica", 8)  # Set font and font size for content
-
-    pdf.drawString(0, usable_height, f"SAR DOCUMENT - {username}")  # Display username with title
-    pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
-    y = usable_height - 30
-
+    # Add data from collections
     for collection_name, df in data.items():
-        pdf.drawString(0, y, f"SAR DOCUMENT - {username} - {collection_name}")
-        y -= 15
+        title = f"SAR DOCUMENT - {username} - {collection_name}"
+        add_table_pages(df, title, pdf_writer)
 
-        # Calculate column widths
-        column_widths = {col: max(pdf.stringWidth(col, "Helvetica", 8), 50) for col in df.columns}
-        for _, row in df.iterrows():
-            for col in df.columns:
-                column_widths[col] = max(column_widths[col], pdf.stringWidth(str(row[col]), "Helvetica", 8))
-
-        total_width = sum(column_widths.values())
-        scaling_factor = usable_width / total_width if total_width > usable_width else 1.0
-        column_widths = {col: width * scaling_factor for col, width in column_widths.items()}
-
-        # Draw table headers
-        for col_idx, (col, col_width) in enumerate(column_widths.items()):
-            pdf.drawString(sum(list(column_widths.values())[:col_idx]), y, str(col))
-        y -= 15
-        pdf.line(0, y, usable_width, y)
-        y -= 15
-
-        # Draw table data
-        for _, row in df.iterrows():
-            for col_idx, (col, col_width) in enumerate(column_widths.items()):
-                text = str(row[col])
-                wrapped_text = pdf.beginText(sum(list(column_widths.values())[:col_idx]), y)
-                wrapped_text.setFont("Helvetica", 8)
-                wrapped_text.setTextOrigin(sum(list(column_widths.values())[:col_idx]), y)
-                wrapped_text.textLines(text)
-                pdf.drawText(wrapped_text)
-            y -= 15
-            if y < 40:  # Create a new page if space runs out
-                pdf.showPage()
-                pdf.translate(margin, margin)
-                pdf.setFont("Helvetica", 8)  # Reset font and font size for new page
-                pdf.drawString(0, usable_height, f"SAR DOCUMENT - {username}")  # Redraw general header on new page
-                pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
-                y = usable_height - 30
-                pdf.drawString(0, y, f"SAR DOCUMENT - {username} - {collection_name}")  # Redraw specific header on new page
-                y -= 15
-
-        y -= 20  # Space after each collection
-
-    # Add notifications to the end of the PDF
-    pdf.showPage()  # Start a new page for notifications
-    pdf.translate(margin, margin)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(0, usable_height, f"Notifications for {username}")
-    pdf.line(0, usable_height - 10, usable_width, usable_height - 10)
-    y = usable_height - 30
-
+    # Add notifications page
+    notifications_content = f"Notifications for {username}\n\n"
     for notification in notifications:
-        pdf.drawString(0, y, f"Message: {notification['message']}")
-        y -= 15
-        pdf.drawString(0, y, f"Category: {notification['category']}")
-        y -= 15
-        pdf.drawString(0, y, f"Timestamp: {notification['timestamp']}")
-        y -= 30
-        if y < 40:  # Create a new page if space runs out
-            pdf.showPage()
-            pdf.translate(margin, margin)
-            y = usable_height - 30
+        notifications_content += f"Message: {notification['message']}\n"
+        notifications_content += f"Category: {notification['category']}\n"
+        notifications_content += f"Timestamp: {notification['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-    pdf.save()
-    buffer.seek(0)
-    return buffer
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=(11 * inch, 17 * inch),  # Increased page size
+                             rightMargin=0.5 * inch, leftMargin=0.5 * inch, 
+topMargin=0.5 * inch, bottomMargin=0.5 * inch)
+    elements = []
+
+    # Add notifications title
+    title_style = TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER')
+    ])
+    title_table = Table([['Notifications']], colWidths=[10 * inch])  # Adjust column width for landscape
+    title_table.setStyle(title_style)
+    elements.append(title_table)
+    elements.append(Spacer(1, 12))  # Add space after title
+
+    # Add notifications content
+    notifications_table = Table([[notifications_content]], colWidths=[10 * inch])
+    elements.append(notifications_table)
+
+    # Build the PDF
+    doc.build(elements)
+    pdf_buffer.seek(0)
+    pdf_reader = PdfReader(pdf_buffer)
+    if pdf_buffer.getvalue():  # Check if the buffer has content
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+    else:
+        print("Warning: The PDF buffer is empty after building.")
+
+    # Add proofs of work submitted
+    for collection_name in data.keys():
+        collection = db[collection_name]
+        for record in collection.find({"username": username}):
+            proof_file_base64 = record.get("proof_file")
+            if proof_file_base64:
+                # Decode the base64 string
+                proof_file_data = base64.b64decode(proof_file_base64)
+                proof_file_buffer = BytesIO(proof_file_data)
+                proof_pdf = PdfReader(proof_file_buffer)
+                for page in proof_pdf.pages:
+                    pdf_writer.add_page(page)
+
+    # Save the final PDF
+    with open(f"{username}_details.pdf", "wb") as f:
+        pdf_writer.write(f)
+
+    return base64.b64encode(open(f"{username}_details.pdf", "rb").read()).decode()
 
 def main():
-    """
-    Main Streamlit application function.
-    """
-    st.title("PDF VIEW")
+    st.title("Generate PDF")
 
-    with st.form("download_pdf_form"):
-        st.write("Enter Username to download full details as PDF:")
-        username = st.text_input("Username")
-        submit_button = st.form_submit_button("Download PDF")
+    username = st.text_input("Enter Username")
 
-    if submit_button:
-        if username:
-            data = fetch_all_data(username)
-            notifications = retrieve_notifications(username)
+    if st.button("Generate PDF") and username:
+        data = fetch_all_data(username)
+        notifications = retrieve_notifications(username)
+        pdf_buffer = create_pdf(data, notifications, username)
 
-            if data or notifications:
-                pdf_buffer = create_pdf(data, notifications, username)
-                st.download_button(
-                    label="Download PDF",
-                    data=pdf_buffer,
-                    file_name=f"SAR_DOCUMENT_{username}.pdf",
-                    mime="application/pdf"
-                )
-            else:
-                st.warning(f"No data found for username: {username}")
+        if pdf_buffer:
+            st.download_button(
+                label="Download PDF",
+                data=base64.b64decode(pdf_buffer),
+                file_name=f"{username}_details.pdf",
+                mime="application/pdf"
+            )
         else:
-            st.warning("Please enter a username.")
+            st.error("Error generating PDF.")
 
 if __name__ == "__main__":
     main()
