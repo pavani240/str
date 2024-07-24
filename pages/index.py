@@ -2,7 +2,7 @@ import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import importlib
-from WTF import l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r, pdf
+from WTF import help,issues,adminissue,l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13, l14, l15, l16, l17, l18, retrieve, facultyretrieve, notification, HODD, sent, r, pdf
 
 st.markdown("""
     <style>
@@ -92,10 +92,12 @@ def faculty_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    available_pages = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12", "l13", "l14", "l15", "l16", "l17", "l18", "Retrieve", "Notifications"]
+    available_pages = ["Help","l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12", "l13", "l14", "l15", "l16", "l17", "l18", "Retrieve", "Notifications","Issues"]
     nav = st.sidebar.radio("Navigation", available_pages)
 
-    if nav == "l1":
+    if nav =="Help":
+        help.main()
+    elif nav == "l1":
         l1.main(st.session_state.username)
     elif nav == "l2":
         l2.main()
@@ -135,6 +137,8 @@ def faculty_home():
         facultyretrieve.main(st.session_state.username)
     elif nav == "Notifications":
         notification.main(st.session_state.username)
+    elif nav == "Issues":
+        issues.main(st.session_state.username)
 
 def admin_home():
     st.title(f"Welcome Admin: {st.session_state.username}")
@@ -142,12 +146,14 @@ def admin_home():
     if st.sidebar.button("Logout"):
         logout()
 
-    nav = st.sidebar.radio("Navigation", ["Add User", "Suspend User"])
+    nav = st.sidebar.radio("Navigation", ["Add User", "Suspend User","Issues"])
 
     if nav == "Add User":
         add_user_form()
     elif nav == "Suspend User":
         suspend_user_form()
+    elif nav == "Issues":
+        adminissue.main()
 
 def add_user_form():
     st.header("Add New User")
